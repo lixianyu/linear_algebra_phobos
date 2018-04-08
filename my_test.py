@@ -24,9 +24,10 @@ def matxRound(M, decPts=4):
     for row in M:
         for i in range(len(row)):
             row[i] = round(row[i], decPts)
-    print(M)
+    # print(M)
 
 # 计算矩阵的转置
+'''
 def transpose(M):
     c, r = shape(M)
     MT = []
@@ -37,6 +38,10 @@ def transpose(M):
     print('row = {}, col = {}:\n{}'.format(r, c, MT))
     # pprint((MT))
     return MT
+'''
+# 这个方法更简单
+def transpose(M):
+    return [list(col) for col in zip(*M)]
 
 # 计算矩阵乘法 AB，如果无法相乘则raise ValueError
 def matxMultiply(A, B):
@@ -53,36 +58,41 @@ def matxMultiply(A, B):
                 for k in range(rB):
                     temp.append(A[i][k] * B[k][j])
                 M[i].append(sum(temp))
-        print('row = {}, col = {}:\n{}'.format(rA, cB, M))
+        # print('row = {}, col = {}:\n{}'.format(rA, cB, M))
         return M
     except ValueError:
         raise ValueError("Matrix A's column number doesn't equal to Matrix b's row number")
 
 # 构造增广矩阵，假设A，b行数相同
-def augmentMatrix(A, b):
-    MZ = A.copy()
-    # MZ = A
-    r, c = shape(A)
-    for i in range(r):
-        MZ[i].append(b[i][0])
-    print('row = {}, col = {}:\n{}'.format(r, c+1, np.array(MZ)))
-    return MZ
+# def augmentMatrix(A, b):
+#     MZ = A.copy()
+#     # MZ = A
+#     r, c = shape(A)
+#     for i in range(r):
+#         MZ[i].append(b[i][0])
+#     print('row = {}, col = {}:\n{}'.format(r, c+1, np.array(MZ)))
+#     return MZ
 
-def augmentMatrix1(A, b):
+def augmentMatrix(A, b):
     return [AA + bb for AA, bb in zip(A,b)]
 
 # r1 <---> r2
 # 直接修改参数矩阵，无返回值
+'''
 def swapRows(M, r1, r2):
     temp = M[r1].copy()
     M[r1] = M[r2]
     M[r2] = temp
+'''
+# 这个方法更简单
+def swapRows(M, r1, r2):
+    M[r1],M[r2] = M[r2],M[r1]
 
 # r <--- r * scale
 # scale为0是非法输入，要求 raise ValueError
 # 直接修改参数矩阵，无返回值
 def scaleRow(M, r, scale):
-    print('scale = {}'.format(scale))
+    # print('scale = {}'.format(scale))
     try:
         if abs(scale) < 1e-10:
             raise ValueError
@@ -188,13 +198,13 @@ def gj_Solve1(A, b, decPts=4, epsilon=1.0e-15):
     (rb, cb) = shape(b)
     if r != rb:
         return None
-    Ab = augmentMatrix1(A, b)
+    Ab = augmentMatrix(A, b)
     for j in range(0, c): #对于Ab的每一列（最后一列除外）
         maxrow = j
         for ii in range(j+1, r): #寻找列 j中，对角线以及对角线以下所有元素的绝对值的最大值
             if abs(Ab[ii][j]) > abs(Ab[maxrow][j]):
                 maxrow = ii
-        print('maxrow = {}'.format(maxrow))
+        # print('maxrow = {}'.format(maxrow))
         if abs(Ab[maxrow][j]) <= epsilon:#如果绝对值最大值为0，则为奇异矩阵
             return None
         swapRows(Ab, maxrow, j)#使用第一个行变换，将绝对值最大值所在行交换到对角线元素所在行（行j）
@@ -212,7 +222,7 @@ def gj_Solve1(A, b, decPts=4, epsilon=1.0e-15):
 
     matxRound(Ab, decPts)
     # print('Ab = \n{}'.format(np.array(Ab)))
-    print('Ab = \n{}'.format(Ab))
+    # print('Ab = \n{}'.format(Ab))
     Mr = []
     for i in range(0, r):
         Mr.append([])
@@ -222,6 +232,123 @@ def gj_Solve1(A, b, decPts=4, epsilon=1.0e-15):
     # vec = Mret[-1]
     return Mr
 
+from helper import *
+'''
+参数：X, Y 存储着一一对应的横坐标与纵坐标的两个一维数组
+返回：线性回归的系数(如上面所说的 m, b)
+'''
+def linearRegression2D(X, Y):
+    XX,YY = [],[]
+    for i in range(len(X)):
+        XX.append([X[i]])
+        YY.append([Y[i]])
+    # print('*'*200)
+    # print('XX = {}'.format(XX))
+    # print('YY = {}'.format(YY))
+    allOne = [[1.0]]*len(X)
+    # allOne.append([1]*len(X))
+    # print('\nallOne = {}'.format(allOne))
+
+    x = augmentMatrix(XX, allOne)
+    # r,c = shape(x)
+    # print('*'*250)
+    # print('x = \nr = {}, c = {}\n{}'.format(r,c,x))
+
+    xt = transpose(x)
+    # print('#'*250)
+    # r,c = shape(xt)
+    # print('xt = \nr = {}, c = {}\n{}'.format(r,c,xt))
+
+    # b等于X的转置乘以Y
+    b = matxMultiply(xt, YY)
+    # r,c = shape(b)
+    # print('b = \nr = {}, c = {}\n{}'.format(r,c,b))
+
+    # A等于X的转置乘以X
+    A = matxMultiply(xt, x)
+    # r,c = shape(A)
+    # print('A = \nr = {}, c = {}\n{}'.format(r,c,A))
+
+    h = gj_Solve1(A, b)
+    # r,c = shape(h)
+    # print('h = \nr = {}, c = {}\n{}'.format(r,c,h))
+
+    return h[0][0], h[1][0]
+
+def linearRegression(X,Y):
+    XX = X
+    YY = []
+    for i in range(len(X)):
+        YY.append([Y[i]])
+
+    # print('XX = {}'.format(XX))
+    # print('*'*200)
+    # print('YY = {}'.format(YY))
+
+    allOne = [[1.0]]*len(X)
+    # allOne.append([1]*len(X))
+    # print('\nallOne = {}'.format(allOne))
+    # print('len(allOne) = {}'.format(len(allOne)))
+
+    x = augmentMatrix(XX, allOne)
+    # r,c = shape(x)
+    # print('*'*250)
+    # print('x = \nr = {}, c = {}\n{}'.format(r,c,x))
+
+    xt = transpose(x)
+    # print('#'*250)
+    # r,c = shape(xt)
+    # print('xt = \nr = {}, c = {}\n{}'.format(r,c,xt))
+
+    # b等于X的转置乘以Y
+    b = matxMultiply(xt, YY)
+    # r,c = shape(b)
+    # print('b = \nr = {}, c = {}\n{}'.format(r,c,b))
+
+    # A等于X的转置乘以X
+    A = matxMultiply(xt, x)
+    # r,c = shape(A)
+    # print('A = \nr = {}, c = {}\n{}'.format(r,c,A))
+
+    h = gj_Solve1(A, b)
+    r,c = shape(h)
+    print('h = \nr = {}, c = {}\n{}'.format(r,c,h))
+    print('^'*160)
+    # print((zip(*h)))
+    hh = zip(*h)
+    print(hh)
+    return [h[0][0], h[1][0], h[2][0]]
+
+seed = 1978
+X_3d, Y_3d = generatePoints3D(seed)
+# vs_scatter_3d(X_3d, Y_3d)
+r, c = shape(X_3d)
+print('X_3d = \nr = {}, c = {}\n{}'.format(r, c, X_3d))
+print('len(X_3d) = {}'.format(len(X_3d)))
+print('_'*259)
+# r, c = shape(Y_3d)
+# print('Y_3d = \nr = {}, c = {}\n{}'.format(r, c, Y_3d))
+print('Y_3d = {}'.format(Y_3d))
+print('len(Y_3d) = {}'.format(len(Y_3d)))
+print('-'*259)
+coeff = linearRegression(X_3d, Y_3d)
+print('coeff = {}'.format(coeff))
+# vs_scatter_3d(X_3d, Y_3d, coeff)
+
+'''
+# 下面测试二维线性回归
+seed = 1978
+X,Y = generatePoints2D(seed)
+# vs_scatter_2d(X, Y)
+# print('X = {}'.format(X))
+# print('Y = {}'.format(Y))
+# print('-'*260)
+
+m2,b2 = linearRegression2D(X,Y)
+print('m2 = {}, b2 = {}'.format(m2, b2))
+'''
+
+'''
 r,c = np.random.randint(low=3, high=9, size=2)
 # r, c = (3,3)
 # matrix = np.random.randint(low = -10, high = 10, size = (r, c))
@@ -242,6 +369,7 @@ print('-'*100)
 h = gj_Solve1(matrix0, b)
 print('*'*100)
 print('h = {}'.format(h))
+'''
 # print(gauss_jordan(matrix))
 # matrixA = np.random.randint(low=1, high=3, size=(r,c))
 # matrixB = np.random.randint(low=0, high=4, size=(c,r))
